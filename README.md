@@ -95,5 +95,5 @@ npx hardhat verify --network bsc [Proxy Address]
 - `Dynamic`, `Static`, `AutoCompound` mode for staking contract
 
 `Dynamic` mode is working like that the staker can claim when they want even the staking period is not ended
-`Static` mode is working like that the staker can claim only after the period is ended.
+`Static` mode is working like that the staker can claim only after the period is ended
 `AutoCompound` mode is working like auto stake when user claim
