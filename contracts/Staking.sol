@@ -286,5 +286,41 @@ contract Staking is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         uint64 rewardRate
     ) external onlyOwner {
         _rewardRate = rewardRate;
-    }
+    } // in case of fixed staking, the rate can only set once. So after this call is done once should be disabled
+    // for dynamic staking contract type, you have to pass two arrays une for utilization , the other for the rates
+    // utilization and rates are directly correlated, since one is the inverse of the other
+    //
+    // You have to store an array of struct like this RateLevels {
+    // utilization: uint256,
+    // rate: uint256
+    //}
+    //
+    // so to each utilization is assigned a rate.
+    // You have to use these "levels" because interactions with contract willmodify the actual utilization but you trigger the rate change only when the
+    // actual utilization value goes out of its range and falls in another range. This event will trigger the dynamic rate shift (increase or decrease, if utilization decreases or increases respectively)
+    //
+    // To set these arrays, the only ones allowed to execute the function must be the Owner AND any Relay providing a valid EIP-712 signature signed by the Owner, for this specific function call. Please see documentation for that
+    // here https://eips.ethereum.org/EIPS/eip-712
+    //
+    // You have to follow the rules of economy where utilization = Demand / Supply . 
+    // in your case :
+    // Demand = Total Tokens Staked
+    // Supply = Total Tokens available as Reward
+    //
+    // You have to setup a Vault where you hold the reward tokens, and from which you harvest rewards to assign to the claimer
+    // 
+    // at each action stake/unstake/claim and so on , you calculate the rewards due to the msg.sender
+    // extract that amount from the Vault and assign to the msg.sender's balance . (The balance where you assign the tokens is the stakingBalance if itAutoCompounds == true, if not you account the rewards in a separated balance and allow to claim from that balance)
+    //
+    // Of course this operation , along with the increase/decrease of staked tokens influences the utilization (if falls outside his working range, the rate will change)
+    //
+    // You have to update the rate at each reward harvesed and at each staked balance update events
+
+    // Also in dynamic staking, you have to take in account that the rewards gained from a staked balance depend on the fluctuations of the APY _rewardRate
+    // this means you have keep track of the latest balance update , along with the timestamp you updated the balance and the latest APY rate index picked up from the historyOfRate (you have to create that variable and update it)
+    // so when you go to calculate the rewards you have the stakingBalance that remained stable (not changed) but the rates changed so you have to multiply each rate * dT where dT is the time that rate lasted
+
+    // Extra bonus 
+    // At moment of Vault topup (or withdraw tokens) you save the timestamp of that action. Then.
+    // At each stake event you should check if the amount of Rewards Tokens in Vault is going to be able to cover the amount of unmaterializedRewards since that moment (rewards that have been virtually matured by all other users except msg.sender but not yet claimed) + the expected generated rewards at the (newly) calculated rate
 }
